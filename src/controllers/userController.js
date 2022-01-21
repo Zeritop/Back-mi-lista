@@ -41,6 +41,7 @@ userCtrl.register = async (req, res) => {
     const usernameVerify = await User.findOne({username});
     if(usernameVerify) return res.status(400).json({message: 'Username ya registrado'})
 
+    // Si los valores tienen menos valor del indicado se devulde un mesaje de error y no se ejecuta lo demas
     if(email.length < 6) return res.status(400).json({message: 'Email: Minimo de longitud 6'})
 
     if(username.length < 3) return res.status(400).json({message: 'Username: Minimo de longitud 3'})
@@ -75,15 +76,50 @@ userCtrl.register = async (req, res) => {
 }
 
 userCtrl.getUser = async (req, res) => {
-    const { username } = req.body;
+    const { username } = req.body; // Obtener el nombre del usuario
 
-    const userName = await User.findOne({username});
-    if(!userName) return res.status(400).json({message: 'El usuario no existe'})
+    const userName = await User.findOne({username}); // Buscar en la BD el usuario por el username
+    if(!userName) return res.status(400).json({message: 'El usuario no existe'}) // Si no encuantra retorna con error y mensaje
 
+    // devuelve un json con la info en caso de encontrarlo
     res.json({
         data: userName
     })
 
+}
+
+userCtrl.profileImage = async (req, res) => {
+    const { user } = req.headers // Se obtiene el user desde la cabecera
+
+    if(req.file){ // Si hay un archivo entra al IF
+        // se obtiene el nombre del archivo 
+        const { filename } = req.file
+
+        try{
+            // Se busca y actualiza el usuario dependiendo del user de obtenido
+            await User.findOneAndUpdate({_id: user}, {
+                imgUrl: filename // Se actaliza la propiedad imgUrl con el nombre del archivo
+            })
+            // Se envia un mensaje de exito
+            res.status(200).json({message: 'Imagen guardada con exito!'})
+
+        }catch(error){
+            // Se envia un mensaje de error
+            res.status(400).json({message: 'Error al guardar la imagen'})
+        }
+    }
+}
+
+userCtrl.getImgProfile = async (req, res) => {
+    const { username } = req.body // Se obtiene el username 
+
+    const userImg = await User.findOne({username}) // Se busca el usuario en la BD
+    if(!userImg) return res.status(400).json({message: 'El usuario no existe'}) // En caso de no encontrarlo se devuelve un mensaje de error
+
+    // En caso de existir se devuelve un json con el nombre de la imagen
+    res.json({
+        img: userImg.imgUrl
+    })
 }
 
 export default userCtrl;

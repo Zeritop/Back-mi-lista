@@ -23,7 +23,11 @@ const userSchema = Schema({
         required: true,
         minlength: [6, 'Minimo 6 caracteres de longitud'],
         maxlength: 255
-    }
+    },
+    imgUrl: {
+        type: String,
+        default: 'user.png'
+    },
 }, {
     timestamps: true
 });
