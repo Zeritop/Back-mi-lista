@@ -6,7 +6,7 @@ const listSchema = new Schema({
         type: String,
         required: true
     },
-    author: {
+    description: {
         type: String,
         required: true
     }, 
@@ -22,14 +22,14 @@ const listSchema = new Schema({
         type: String,
         required: true
     },
-    favourite: {
-        type: Boolean,
-        default: false
-    },
-    seen: {
-        type: Boolean,
-        default: false
-    }
+    // favourite: {
+    //     type: Boolean,
+    //     default: false
+    // },
+    // seen: {
+    //     type: Boolean,
+    //     default: false
+    // }
 }, {
     timestamps: true
 })

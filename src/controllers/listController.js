@@ -1,62 +1,97 @@
 import List from '../models/Lists.js';
+import User from '../models/User.js';
 
 const listCtrl = {};
 
 listCtrl.addList = async (req, res) => {
-    const { idList, author, title, urlImg, typeList, favourite, seen } = req.body
+    const { 
+        idList,
+        description,
+        title,
+        urlImg,
+        typeList,
+        userId,
+        favourite,
+        seen
+     } = req.body
 
     const verifyList = await List.findOne({idList});
-    if(verifyList) return res.status(400).json({message: 'Ya está almacenado en la lista'});
+    
 
     const saveList = new List({
         idList,
-        author, 
+        description, 
         title, 
         urlImg, 
-        typeList,
-        favourite,
-        seen
+        typeList
     })
 
     try{
-        await saveList.save();
-        res.status(200).json({message: 'Agregado correctamente'});
+        if(!verifyList) {
+            try{
+                const salvar = await saveList.save()
+                
+                const user = await User.findOne({_id: userId})   
+                
+                user.lists.push({lista: salvar._id, favourite, seen});  
+    
+                await user.save();
+
+                return res.status(200).json({message: 'Lista guardada con exito!'})
+    
+            }catch(error){
+                console.log(error)
+            }
+        }else{
+            const user = await User.findOne({_id: userId})
+    
+            if(user.lists !== undefined){
+                if(user.lists.includes(verifyList._id)) return res.status(400).json({message: 'Ya está almacenado en la lista'});
+        
+                user.lists.push({lista: verifyList._id, favourite, seen});
+        
+                await user.save();
+        
+                return res.status(200).json({message: 'Lista guardada con exito!'})
+    
+            }
+        }
     }catch(error){
         res.status(400).json({message: error.message});
     }
 }
 
 listCtrl.getLists =  async (req, res) => {
-    const { author } = req.body
+    const { username  } = req.body
     
-    const lists = await List.find({author});
+    const user = await User.findOne({username}).populate('lists.lista')
     
-    if(!lists) return res.status(400)
+    if(!user) return res.status(400)
+
+    console.log(user.lists)
 
     res.status(200).json({
-        data: lists
+        data: user.lists
     })
 }
 
 listCtrl.updateList = async (req, res) => {
-    const { _id, author, title, urlImg, favourite, seen, idList, typeList, userTk } = req.body
+    const { nameLogin, id, favourite, seen, userTk } = req.body
 
-    if(author !== userTk) return res.status(403).json({message: 'Usuario no autorizado para esta acción'})
+    if(nameLogin !== userTk) return res.status(403).json({message: 'Usuario no autorizado para esta acción'})
 
-    const verifyList = await List.findOne({_id});
-    if(!verifyList) return res.status(400).json({message: 'No se encontró en la lista'})
+    const verifyList = await User.findOne({username: userTk});
 
+    const verify = verifyList.lists.filter(v => v._id.toString() === id)
+
+    if(verify.length === 0) return res.status(400).json({message: 'No se encontró en la lista'})
+
+    const listaE = verifyList.lists.map(v => v._id.toString()).indexOf(id)
+    verifyList.lists[listaE].favourite = favourite;
+    verifyList.lists[listaE].seen = seen;
 
     try{
-        await List.findOneAndUpdate({_id}, {
-            idList,
-            author,
-            title,
-            urlImg,
-            typeList,
-            favourite,
-            seen
-        })
+        await verifyList.save();
     
         res.status(200).json({message: 'Actualizado correctamente'})
 
@@ -66,12 +101,17 @@ listCtrl.updateList = async (req, res) => {
 }
 
 listCtrl.deleteList = async (req, res) => {
-    const { _id, author, userTk } = req.body
+    const { nameLogin, id, userTk } = req.body
 
-    if(author !== userTk) return res.status(403).json({message: 'Usuario no autorizado para esta acción'})
+    if(nameLogin !== userTk) return res.status(403).json({message: 'Usuario no autorizado para esta acción'})
 
     try{
-        await List.findOneAndDelete({_id});
+        const listDelete = await User.findOne({username: userTk});
+        
+        listDelete.lists = listDelete.lists.filter(ld => ld._id?.toString() !== id) 
+
+        await listDelete.save();
+
         res.status(200).json({message: 'Eliminado de la lista'})
 
     }catch(error){

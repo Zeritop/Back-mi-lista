@@ -28,6 +28,22 @@ const userSchema = Schema({
         type: String,
         default: 'user.png'
     },
+    lists: [
+        {
+            lista: {
+                type: Schema.Types.ObjectId,
+                ref: 'List'
+            },
+            favourite: {
+                type: Boolean,
+                default: false
+            },
+            seen: {
+                type: Boolean,
+                default: false
+            }
+        }
+    ]
 }, {
     timestamps: true
 });
